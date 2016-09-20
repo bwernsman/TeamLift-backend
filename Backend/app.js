@@ -17,13 +17,16 @@ console.log("test2");
 
 firebase.initializeApp({
   serviceAccount: "serviceAccountCredentials.json",
-  databaseURL: "https://teamliftapp.firebaseio.com"
+  databaseURL: "https://teamliftapp-dc901.firebaseio.com/"
 });
 
 var db = firebase.database();
 var ref = db.ref("/users");
 
 updateUser();
+
+saveData(111);
+
 
 app.get('/', function (req, res) {
   res.status(200).send('Everything is running!');
@@ -128,7 +131,7 @@ function checkUserLogin(userID, callback) {
 function saveData(userID){
   var hopperRef = ref.child(userID);
     hopperRef.update({
-      "nickname": "Benji"
+      "nickname": "AJMALLLLLLLLLL"
   },function(error) {
     if (error) {
     console.log("Data could not be saved." + error);
