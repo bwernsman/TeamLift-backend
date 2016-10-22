@@ -22,6 +22,7 @@ firebase.initializeApp({
 
 var db = firebase.database();
 var ref = db.ref("/users");
+var gyms = db.ref("/gyms");
 
 updateUser();
 
@@ -51,6 +52,16 @@ app.post("/login", function(req, res) {
     if(req.body.email == "Ben" && req.body.password == "123"){
       return res.send({"status": "0", "message": "Success","providerStatus": "true"});
     }
+});
+
+app.post("/swipe", function(request, response){
+  var myId = request.body.myId;
+  var otherId = request.body.otherId;
+  if(myId == null || otherId == null)
+    return response.send({"status": "invalid id(s)"});
+  else
+    swipe_user(myId, otherId);
+  return response.send({"status":"200"});
 });
 
 app.post("/auth", function(request, response) {
@@ -151,7 +162,38 @@ function updateUser(){
 
 // Start the server
 var server = app.listen(process.env.PORT || '8080', function () {
-  console.log('App listening on port %s', server.address().port);
+  console.log('App listening on 127.0.0.1:%s', server.address().port);
   console.log('Press Ctrl+C to quit.');
 });
+
+
+function swipe_user(myId, otherId){
+  // console.log(gyms.child.name);
+  console.log("wtf is this ");
+  try{
+  gyms.child("Users").once("value", function(snapshot) {
+      console.log(snap.val);
+  }, function (errorObject) {
+      console.log("The read failed: " + errorObject.code);
+  });
+  }
+  catch(err){
+    console.log(err);
+  } 
+
+  //ref compare if user with myid has same gym as user with otherid
+  //if not, return bad
+  //else compare if otherId has swiped on myId. ONLY if YES and the above do we return 'match'
+  return 0;
+}
+/*
+swipe on another user
+1) if other user has swipped
+2) if other user belongs to the same gym
+
+
+*/
+
+
+
 
