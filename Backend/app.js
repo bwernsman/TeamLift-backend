@@ -1,7 +1,6 @@
 'use strict';
 
 var firebase = require("firebase");
-
 var url = require( "url" );
 var queryString = require( "querystring" );
 var express = require('express');
@@ -20,6 +19,7 @@ firebase.initializeApp({
 //Set db ref for Firebase
 var db = firebase.database();
 var gyms = db.ref("/gyms");
+var users = db.ref("/users");
 
 // Start the server
 var server = app.listen(process.env.PORT || '8080', function () {
@@ -29,9 +29,99 @@ var server = app.listen(process.env.PORT || '8080', function () {
 
 //When the root is called
 app.get('/', function (req, res) {
-  updateUserGym();
   res.status(200).send('Everything is running!');
 });
+
+
+//Authenticate the user
+app.post("/auth", function(request, response) {
+  firebase.auth().verifyIdToken(request.body.idToken).then(function(decodedToken) {
+    var uid = decodedToken.sub;
+    var userObject = getUser(uid, function(foundUser) {
+      var responseCode;
+      return response.send({"status": responseCode,"User":foundUser});
+      });
+    }).catch(function(error) {
+      // Handle error
+      console.log(error);
+      return response.send({"status": "2"});
+    });
+});
+
+
+function saveGym(gym){
+  var hopperRef = ref.child(userID);
+    hopperRef.update({
+      "nickname": "AJMALLLLLLLLLL"
+  },function(error) {
+    if (error) {
+    console.log("Data could not be saved." + error);
+  } else {
+    console.log("Data saved successfully.");
+  }
+  });
+}
+
+//Add a user to a gym
+app.post("/addgym", function(request, response) {
+  //console.log(request.body);
+  if(request.body.idToken == null){
+    return response.send({"error": "Missing token"});
+  }
+  else if(request.body.gym == null){
+    return response.send({"error": "Missing gym"});
+  }
+  firebase.auth().verifyIdToken(request.body.idToken).then(function(decodedToken) {
+    var uid = decodedToken.sub;
+    var setGym = gyms.child(request.body.gym).child("users");
+
+    gyms.child(request.body.gym).on("value", function(snapshot) {
+
+      console.log(snapshot.val());
+
+      //Stop the listener
+      gyms.off("value");
+      return response.send({"status": "setting_gym"});
+
+    }, function (errorObject) {
+      console.log("The read failed: " + errorObject.code);
+      return response.send({"status": "error"});
+    });
+
+    /*
+    setGym.push({
+      "user": uid
+    },function(error) {
+      if (error) {
+        console.log("Data could not be saved." + error);
+        return response.send({"status": "failed"});
+      } else {
+      console.log("Data saved successfully.");
+      return response.send({"status": "saved"});
+    }
+    });
+    */
+    
+  }).catch(function(error) {
+      // Handle error
+      console.log(error);
+      return response.send({"status": "2"});
+  });
+});
+
+
+//Get a users account
+function getUser(userID, callback) {
+  users.child(userID).on("value", function(snapshot) {
+    //Stop the listener
+    users.off("value");
+    return callback(snapshot.val());
+  }, function (errorObject) {
+    console.log("The read failed: " + errorObject.code);
+    return callback("Error");
+  });
+}
+
 
 //Check for updates within Gyms
 function updateUserGym(){
@@ -41,7 +131,7 @@ function updateUserGym(){
     console.log("----Just the gym name----");
     console.log(snapshot.val().name);
     //Stop the listener
-    gyms.off("value");
+    //gyms.off("value");
   }, function (errorObject) {
     console.log("The read failed: " + errorObject.code);
   });
