@@ -17,20 +17,37 @@ console.log("test2");
 
 firebase.initializeApp({
   serviceAccount: "serviceAccountCredentials.json",
-  databaseURL: "https://teamliftapp-dc901.firebaseio.com/"
+  databaseURL: "https://teamlift-12d20.firebaseio.com/"
 });
 
 var db = firebase.database();
-var ref = db.ref("/users");
+var ref = db.ref("/gyms");
 
-updateUser();
-
-saveData(111);
 
 
 app.get('/', function (req, res) {
+  updateUser();
   res.status(200).send('Everything is running!');
 });
+
+// Start the server
+var server = app.listen(process.env.PORT || '8080', function () {
+  console.log('App listening on port %s', server.address().port);
+  console.log('Press Ctrl+C to quit.');
+});
+
+function updateUser(){
+  console.log("aaa");
+  // Attach an asynchronous callback to read the data at our posts reference
+ref.on("value", function(snapshot) {
+  console.log(snapshot.val());
+}, function (errorObject) {
+  console.log("The read failed: " + errorObject.code);
+});
+}
+
+
+/*
 
 app.post("/account", function(req, res) {
   console.log(req.query)
@@ -90,7 +107,6 @@ app.post("/auth", function(request, response) {
 
 
 function checkUser(userID){
-  /*
   return ref.child(userID).on("value", function(snapshot) {
       console.log("made it here");
       if(snapshot.val().nickname == null){
@@ -106,7 +122,6 @@ function checkUser(userID){
   });
   console.log("something went wrong");
   //ref.off("value");
-  */
   console.log("Checking user");
 
   
@@ -141,17 +156,10 @@ function saveData(userID){
   });
 }
 
-function updateUser(){
-  ref.on("child_changed", function(snapshot) {
-      var changedPost = snapshot.val();
-      console.log("A new user was created");
-      console.log(snapshot.key + "The updated post title is " + changedPost.text);
-  });
-}
 
-// Start the server
-var server = app.listen(process.env.PORT || '8080', function () {
-  console.log('App listening on port %s', server.address().port);
-  console.log('Press Ctrl+C to quit.');
-});
+
+  */
+
+
+
 
