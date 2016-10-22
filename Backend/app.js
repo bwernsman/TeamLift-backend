@@ -6,29 +6,20 @@ var url = require( "url" );
 var queryString = require( "querystring" );
 var express = require('express');
 var bodyParser = require('body-parser');
-
 var app = express();
-
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-console.log("test2");
-
+//Initalize Firebase
 firebase.initializeApp({
   serviceAccount: "serviceAccountCredentials.json",
   databaseURL: "https://teamlift-12d20.firebaseio.com/"
 });
 
+//Set db ref for Firebase
 var db = firebase.database();
-var ref = db.ref("/gyms");
-
-
-
-app.get('/', function (req, res) {
-  updateUser();
-  res.status(200).send('Everything is running!');
-});
+var gyms = db.ref("/gyms");
 
 // Start the server
 var server = app.listen(process.env.PORT || '8080', function () {
@@ -36,14 +27,19 @@ var server = app.listen(process.env.PORT || '8080', function () {
   console.log('Press Ctrl+C to quit.');
 });
 
-function updateUser(){
-  console.log("aaa");
-  // Attach an asynchronous callback to read the data at our posts reference
-ref.on("value", function(snapshot) {
-  console.log(snapshot.val());
-}, function (errorObject) {
-  console.log("The read failed: " + errorObject.code);
+//When the root is called
+app.get('/', function (req, res) {
+  updateUserGym();
+  res.status(200).send('Everything is running!');
 });
+
+//Check for updates within Gyms
+function updateUserGym(){
+  gyms.on("value", function(snapshot) {
+    console.log(snapshot.val());
+  }, function (errorObject) {
+    console.log("The read failed: " + errorObject.code);
+  });
 }
 
 
