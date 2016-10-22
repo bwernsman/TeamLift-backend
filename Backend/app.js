@@ -49,22 +49,8 @@ app.post("/auth", function(request, response) {
 });
 
 
-function saveGym(gym){
-  var hopperRef = ref.child(userID);
-    hopperRef.update({
-      "nickname": "AJMALLLLLLLLLL"
-  },function(error) {
-    if (error) {
-    console.log("Data could not be saved." + error);
-  } else {
-    console.log("Data saved successfully.");
-  }
-  });
-}
-
 //Add a user to a gym
 app.post("/addgym", function(request, response) {
-  //console.log(request.body);
   if(request.body.idToken == null){
     return response.send({"error": "Missing token"});
   }
@@ -73,35 +59,38 @@ app.post("/addgym", function(request, response) {
   }
   firebase.auth().verifyIdToken(request.body.idToken).then(function(decodedToken) {
     var uid = decodedToken.sub;
-    var setGym = gyms.child(request.body.gym).child("users");
+    
 
-    gyms.child(request.body.gym).on("value", function(snapshot) {
+    gyms.child(request.body.gym).child("users").once("value", function(snapshot) {
+      console.log(snapshot.key);
+      
+      console.log(snapshot.hasChild("user"));
 
-      console.log(snapshot.val());
-
-      //Stop the listener
-      gyms.off("value");
-      return response.send({"status": "setting_gym"});
+      for(var item in snapshot.val()){
+        if(snapshot.val()[item]["user"] == uid){
+          return response.send({"status": "Gym already set"});
+        }
+        else{
+          //Set the gym
+        }
+      }
+      var setGym = gyms.child(request.body.gym).child("users");
+      setGym.push({
+            "user": uid
+          },function(error) {
+          if (error) {
+            console.log("Data could not be saved." + error);
+            return response.send({"status": "failed"});
+          } else {
+          console.log("Data saved successfully.");
+          return response.send({"status": "saved"});
+      }
+      });
 
     }, function (errorObject) {
       console.log("The read failed: " + errorObject.code);
       return response.send({"status": "error"});
     });
-
-    /*
-    setGym.push({
-      "user": uid
-    },function(error) {
-      if (error) {
-        console.log("Data could not be saved." + error);
-        return response.send({"status": "failed"});
-      } else {
-      console.log("Data saved successfully.");
-      return response.send({"status": "saved"});
-    }
-    });
-    */
-    
   }).catch(function(error) {
       // Handle error
       console.log(error);
