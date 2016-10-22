@@ -36,15 +36,31 @@ app.get('/', function (req, res) {
 //Check for updates within Gyms
 function updateUserGym(){
   gyms.on("value", function(snapshot) {
+    console.log("----Entire Snapshot----");
     console.log(snapshot.val());
+    console.log("----Just the gym name----");
+    console.log(snapshot.val().name);
+    //Stop the listener
+    gyms.off("value");
   }, function (errorObject) {
     console.log("The read failed: " + errorObject.code);
   });
 }
 
 
-/*
+//Check for updates with user of the gym
+function checkUser(){
+  gyms.child("Users").on("value", function(snapshot) {
+      console.log(snapshot.val());
+  }, function (errorObject) {
+      console.log("The read failed: " + errorObject.code);
+  });
+  //Stop the listener
+  gyms.off("value");
+}
 
+
+/*
 app.post("/account", function(req, res) {
   console.log(req.query)
     if(!req.query.username) {
