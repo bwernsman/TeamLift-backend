@@ -38,8 +38,7 @@ app.post("/auth", function(request, response) {
   firebase.auth().verifyIdToken(request.body.idToken).then(function(decodedToken) {
     var uid = decodedToken.sub;
     var userObject = getUser(uid, function(foundUser) {
-      var responseCode;
-      return response.send({"status": responseCode,"User":foundUser});
+      return response.send({"status": "1","User":foundUser});
       });
     }).catch(function(error) {
       // Handle error
@@ -50,6 +49,7 @@ app.post("/auth", function(request, response) {
 
 
 //Add a user to a gym
+//ADD, make sure that we check the user is removed from the previous gym
 app.post("/addgym", function(request, response) {
   if(request.body.idToken == null){
     return response.send({"error": "Missing token"});
@@ -57,21 +57,19 @@ app.post("/addgym", function(request, response) {
   else if(request.body.gym == null){
     return response.send({"error": "Missing gym"});
   }
+  else if(request.body.previousGym == null){
+    return response.send({"error": "Missing previous gym"});
+  }
   firebase.auth().verifyIdToken(request.body.idToken).then(function(decodedToken) {
     var uid = decodedToken.sub;
     
-
     gyms.child(request.body.gym).child("users").once("value", function(snapshot) {
-      console.log(snapshot.key);
-      
+      console.log(snapshot.key);  
       console.log(snapshot.hasChild("user"));
 
       for(var item in snapshot.val()){
         if(snapshot.val()[item]["user"] == uid){
           return response.send({"status": "Gym already set"});
-        }
-        else{
-          //Set the gym
         }
       }
       var setGym = gyms.child(request.body.gym).child("users");
