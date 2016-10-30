@@ -1,8 +1,7 @@
-# Simple Hello World Node.js sample for Google App Engine
+# TeamLift Backend
 
-This sample demonstrates a tiny Hello World Node.js app for [Google App Engine Managed VMs](https://cloud.google.com/appengine).
+## Startup
+Go to the root directory 'npm start' to start locally
 
-## Running locally
 
-Refer to the [appengine/README.md](../README.md) file for instructions on
-running and deploying.
+

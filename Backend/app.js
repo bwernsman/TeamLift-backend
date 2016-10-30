@@ -110,6 +110,11 @@ function getUser(userID, callback) {
 }
 
 
+
+
+//--------------------------------------------------------//
+
+
 //Check for updates within Gyms
 function updateUserGym(){
   gyms.on("value", function(snapshot) {
