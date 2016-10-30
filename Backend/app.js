@@ -1,12 +1,14 @@
 'use strict';
 
+//Imports
 var firebase = require("firebase");
-var url = require( "url" );
-var queryString = require( "querystring" );
+var url = require("url");
+var queryString = require("querystring");
 var express = require('express');
 var bodyParser = require('body-parser');
 var app = express();
 
+//Set app to use JSON and URL Encoding
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -32,24 +34,15 @@ app.get('/', function (req, res) {
   res.status(200).send('Everything is running!');
 });
 
-
 //Authenticate the user
 app.post("/auth", function(request, response) {
-  firebase.auth().verifyIdToken(request.body.idToken).then(function(decodedToken) {
-    var uid = decodedToken.sub;
-    var userObject = getUser(uid, function(foundUser) {
-      return response.send({"status": "1","User":foundUser});
-      });
-    }).catch(function(error) {
-      // Handle error
-      console.log(error);
-      return response.send({"status": "2"});
-    });
+   authToken(request.body.idToken, function (status, user, uid) {
+       return response.send({"status": status,"User":user});
+   })
 });
 
 
 //Add a user to a gym
-//ADD, make sure that we check the user is removed from the previous gym
 app.post("/addgym", function(request, response) {
   if(request.body.idToken == null){
     return response.send({"error": "Missing token"});
@@ -60,42 +53,62 @@ app.post("/addgym", function(request, response) {
   else if(request.body.previousGym == null){
     return response.send({"error": "Missing previous gym"});
   }
-  firebase.auth().verifyIdToken(request.body.idToken).then(function(decodedToken) {
-    var uid = decodedToken.sub;
-    
-    gyms.child(request.body.gym).child("users").once("value", function(snapshot) {
-      console.log(snapshot.key);  
-      console.log(snapshot.hasChild("user"));
+  authToken(request.body.idToken, function (status, user, uid) {
 
-      for(var item in snapshot.val()){
-        if(snapshot.val()[item]["user"] == uid){
-          return response.send({"status": "Gym already set"});
+    var currentGym = user["card_info"]["gym"];
+    
+    console.log(currentGym)
+
+    return response.send({"status": "saved"});
+
+    /*
+    if(status == 2){
+      return response.send({"error": "Invalid token"});
+    }
+    else{
+      gyms.child(request.body.gym).child("users").once("value", function(snapshot) {
+        
+        if(request.body.previousGym != ""){
+          console.log("Removing");
+          gyms.child(request.body.previousGym).child("users").child("-KVLpcSKda3GEcRbnIw-").remove();
         }
-      }
-      var setGym = gyms.child(request.body.gym).child("users");
-      setGym.push({
-            "user": uid
-          },function(error) {
+
+        var setGym = gyms.child(request.body.gym).child("users");
+        setGym.push({
+          "user":uid
+        },function(error) {
           if (error) {
             console.log("Data could not be saved." + error);
             return response.send({"status": "failed"});
           } else {
           console.log("Data saved successfully.");
           return response.send({"status": "saved"});
-      }
+        }
       });
-
     }, function (errorObject) {
-      console.log("The read failed: " + errorObject.code);
-      return response.send({"status": "error"});
+       console.log("The read failed: " + errorObject.code);
+       return response.send({"status": "error"});
     });
-  }).catch(function(error) {
-      // Handle error
-      console.log(error);
-      return response.send({"status": "2"});
+    }
+
+    */
+
   });
 });
 
+
+//Authenticate token
+function authToken(token, callback){
+  firebase.auth().verifyIdToken(token).then(function(decodedToken) {
+    var uid = decodedToken.sub;
+    var userObject = getUser(uid, function(foundUser) {
+      return callback(1, foundUser, uid);
+      });
+    }).catch(function(error) {
+      console.log(error);
+      return callback(2, "Invalid access token", "Not Found");
+    });
+}
 
 //Get a users account
 function getUser(userID, callback) {
@@ -111,8 +124,19 @@ function getUser(userID, callback) {
 
 
 
-
 //--------------------------------------------------------//
+
+/*
+
+//Use this to search through a gym
+
+for(var item in snapshot.val()){
+        if(snapshot.val()[item]["user"] == uid){
+          console.log("Found User");
+          //return response.send({"status": "Gym already set"});
+        }
+      }
+*/
 
 
 //Check for updates within Gyms
