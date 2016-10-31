@@ -43,19 +43,54 @@ app.post("/auth", function(request, response) {
 
 //Add a user to a gym
 app.post("/addgym", function(request, response) {
+  var called = 1;
+  console.log("Error Checking");
   if(request.body.idToken == null){
     return response.send({"error": "Missing token"});
   }
   else if(request.body.gym == null){
     return response.send({"error": "Missing gym"});
   }
-  console.log("bb-bb")
+  console.log("Error Checking Passed");
   authToken(request.body.idToken, function (status, user, uid) {
-    setGym(request.body.gym, uid, function (newGymUserID) {
-      console.log(newGymUserID);
-      return response.send({"success": newGymUserID});
-    });
+    console.log("CALLING");
+    console.log(status);
+    if(status == 2){
+      return response.send({"error": "Invalid token"});
+    }
+    else{
+      if(called == 1){
+        called = 2;
+        console.log("Got Auth Token");
+        console.log(user["card_info"]["gym"]);
+
+        removeGym(user, function (status) {
+        
+        });
+
+        setGym(request.body.gym, uid, function (newGymUserID) {
+          console.log(newGymUserID);
+          console.log("Done");
+          
+          console.log("HEREEEEE");
+
+          //uid, newGym, newGymUserID, callback
+
+          
+          updateGymUser(uid, request.body.gym, newGymUserID, function (status){
+            return response.send({"success": newGymUserID});
+          });
+          
+          
+      });
+      }
+      
+      
+    }
   });
+
+  console.log("aaaa");
+
 
     /*
     if(status == 2){
@@ -91,14 +126,14 @@ app.post("/addgym", function(request, response) {
 });
 
 
-
 //Authenticate token
 function authToken(token, callback){
   firebase.auth().verifyIdToken(token).then(function(decodedToken) {
+    console.log("Called");
     var uid = decodedToken.sub;
     var userObject = getUser(uid, function(foundUser) {
       return callback(1, foundUser, uid);
-      });
+    });
     }).catch(function(error) {
       console.log(error);
       return callback(2, "Invalid access token", "Not Found");
@@ -113,11 +148,30 @@ function setGym(gym, uid, callback){
   });
 }
 
+//Delete Old Gym
+function removeGym(user, callback){
+  if(!user["card_info"]["gym"] && !user["card_info"]["gymUserID"]){
+    return callback("1");
+  }
+  else{
+    gyms.child(user["card_info"]["gym"]).child("users").child(user["card_info"]["gymUserID"]).remove(function(error){
+      console.log("Removed");
+      return callback("2");
+    });
+  }
+}
+
+//Update user 
+function updateGymUser(uid, newGym, newGymUserID, callback){
+  var updateUser = users.child(uid).child("card_info").update({"gymUserID":newGymUserID,"gym":"Greg"}, function(error){
+    console.log("Made it here");
+    return callback("1");
+  });
+}
+
 //Get a users account
 function getUser(userID, callback) {
-  users.child(userID).on("value", function(snapshot) {
-    //Stop the listener
-    users.off("value");
+  users.child(userID).once("value", function(snapshot) {
     return callback(snapshot.val());
   }, function (errorObject) {
     console.log("The read failed: " + errorObject.code);
