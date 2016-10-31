@@ -41,7 +41,6 @@ app.post("/auth", function(request, response) {
    })
 });
 
-
 //Add a user to a gym
 app.post("/addgym", function(request, response) {
   if(request.body.idToken == null){
@@ -50,51 +49,47 @@ app.post("/addgym", function(request, response) {
   else if(request.body.gym == null){
     return response.send({"error": "Missing gym"});
   }
-  else if(request.body.previousGym == null){
-    return response.send({"error": "Missing previous gym"});
-  }
+  console.log("bb-bb")
   authToken(request.body.idToken, function (status, user, uid) {
-
-    var currentGym = user["card_info"]["gym"];
-    
-    console.log(currentGym)
-
-    return response.send({"status": "saved"});
+    setGym(request.body.gym, uid, function (newGymUserID) {
+      console.log(newGymUserID);
+      return response.send({"success": newGymUserID});
+    });
+  });
 
     /*
     if(status == 2){
       return response.send({"error": "Invalid token"});
     }
     else{
-      gyms.child(request.body.gym).child("users").once("value", function(snapshot) {
-        
-        if(request.body.previousGym != ""){
-          console.log("Removing");
-          gyms.child(request.body.previousGym).child("users").child("-KVLpcSKda3GEcRbnIw-").remove();
-        }
+      if(user["card_info"]["gym"]){
+        console.log("Removing");
+        var previousGym = user["card_info"]["gym"];
+        var previousGymID = user["card_info"]["gym"];
+        gyms.child(previousGym).child("users").child(previousGymID).remove(function(error){
+          console.log("Removed");
+          gyms.off();
+        });
+      }
 
-        var setGym = gyms.child(request.body.gym).child("users");
-        setGym.push({
-          "user":uid
-        },function(error) {
-          if (error) {
-            console.log("Data could not be saved." + error);
-            return response.send({"status": "failed"});
-          } else {
-          console.log("Data saved successfully.");
-          return response.send({"status": "saved"});
-        }
+      console.log("aaa-aa")
+      var setGym = gyms.child(request.body.gym).child("users").push({uid}, function(error){
+        console.log("Set gym")
+        var newGymUserID = setGym.key;
+        setGym.off();
+        console.log(newGymUserID);
+        var updateUser = users.child(uid).child("card_info").update({"gymUserID":newGymUserID,"gym":"Greg"}, function(error){
+          console.log("Made it here");
+          users.off();
+          return response.send({"Passed": "It worked"});
+        });
       });
-    }, function (errorObject) {
-       console.log("The read failed: " + errorObject.code);
-       return response.send({"status": "error"});
-    });
     }
-
     */
 
-  });
+  
 });
+
 
 
 //Authenticate token
@@ -108,6 +103,14 @@ function authToken(token, callback){
       console.log(error);
       return callback(2, "Invalid access token", "Not Found");
     });
+}
+
+//Set Gym
+function setGym(gym, uid, callback){
+  var setGym = gyms.child(gym).child("users").push({uid},function(error) {
+        var newGymUserID = setGym.key;
+        return callback(newGymUserID);
+  });
 }
 
 //Get a users account
