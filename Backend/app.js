@@ -103,10 +103,8 @@ app.post("/getUsers", function(request, response) {
         return response.send({"status": "1","users":pUsers});
       }
       else{
-        
         var gymUsers = [];
         var connectedUsers = [];
-
         gyms.child(user["card_info"]["gym"]).child("users").once("value", function(snapshot) {
           for(var item in snapshot.val()){
             console.log(snapshot.val()[item]["uid"]);
@@ -119,7 +117,13 @@ app.post("/getUsers", function(request, response) {
               connectedUsers.push(snapshot.val()[item]["userID"]);
             }
 
-            var newArray = difference(connectedUsers, gymUsers);
+            var newArray = [];
+
+            for (var i = 0; i < gymUsers.length; i++){
+              if(connectedUsers.indexOf(gymUsers[i]) == - 1 ){
+                newArray.push(gymUsers[i]);
+              }
+            }
 
             if(newArray.length == 0){
               response.send({"Status": "No new matches"});
@@ -150,6 +154,91 @@ app.post("/getUsers", function(request, response) {
       }
     }
   });
+});
+
+//Swipe user
+//Input
+//-idToken, userID, swipe (yes or no)
+app.post("/swipe", function(request, response) {
+  if(request.body.idToken == null){
+    return response.send({"error": "Missing token"});
+  }
+  else if(request.body.userID == null){
+    return response.send({"error": "Missing userID"});
+  }
+  else if(request.body.swipe == null){
+    return response.send({"error": "Missing swipe"});
+  }
+  else if(request.body.swipe != "yes" && request.body.swipe != "no"){
+    return response.send({"error": "Invalid Swipe"});
+  }
+  authToken(request.body.idToken, function (status, user, uid) {
+    var found = false;
+    for(var item in user["potential_matches"]){
+      console.log(user["potential_matches"][item]["userID"]);
+      if(user["potential_matches"][item]["userID"] == request.body.userID){
+        found = true
+        console.log("Found");
+        console.log(item);
+        users.child(uid).child("potential_matches").child(item).remove(function(error){
+          if(error){
+            return response.send({"error": "Error removing"});
+          }
+          else{
+            if(request.body.swipe == "no"){
+              return response.send({"status": 1,"message":"swipe is a no"});
+            }
+            else{
+              var swipeUser = request.body.userID;
+              users.child(uid).child("liked_users").push({swipeUser}, function(error){
+                if(error){
+                  return response.send({"error": "Error updating likes"});
+                }
+
+                //Check if they liked me
+                var matchFound = false;
+                console.log("See if they like us");
+                
+                for(var item in user["liked_me"]){
+                  console.log(user["liked_me"][item]["uid"]);
+                  console.log(request.body.userID);
+                  if(user["liked_me"][item]["uid"] == request.body.userID){
+                    matchFound = true;
+                    //it's a match
+                    users.child(uid).child("matches").push({"uid":swipeUser}, function(error){
+                      if(error){
+                        return response.send({"error": "Error updating likes"});
+                      }
+                      users.child(swipeUser).child("matches").push({"uid":uid}, function(error){
+                        if(error){
+                          return response.send({"error": "Error updating likes"});
+                        }
+                        //Check if they are a match
+                        return response.send({"status": 1,"message":"swipe is a yes add added to matches"});
+                      });
+                    });
+                  }
+                }
+
+                if(!matchFound){
+                  users.child(swipeUser).child("others_liked").push({uid}, function(error){
+                    if(error){
+                      return response.send({"error": "Error updating likes"});
+                    }
+                    //Check if they are a match
+                    return response.send({"status": 1,"message":"swipe is a yes, added to other user likes"});
+                  });
+                }
+              });
+            }
+          }
+        });
+      }
+    }
+    if(!found){
+      return response.send({"error": "User not found"});
+    }
+  })
 });
 
 
@@ -194,7 +283,7 @@ function removeGym(user, callback){
 
 //Update user 
 function updateGymUser(uid, newGym, newGymUserID, callback){
-  var updateUser = users.child(uid).child("card_info").update({"gymUserID":newGymUserID,"gym":newGym}, function(error){
+  users.child(uid).child("card_info").update({"gymUserID":newGymUserID,"gym":newGym}, function(error){
     if(error){
       return callback("2");
     }
