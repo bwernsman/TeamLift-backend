@@ -108,7 +108,10 @@ app.post("/getUsers", function(request, response) {
         gyms.child(user["card_info"]["gym"]).child("users").once("value", function(snapshot) {
           for(var item in snapshot.val()){
             console.log(snapshot.val()[item]["uid"]);
-            gymUsers.push(snapshot.val()[item]["uid"]);
+            if(snapshot.val()[item]["uid"] != uid){
+              gymUsers.push(snapshot.val()[item]["uid"]);
+            }
+            
           }
 
           users.child(uid).child("connected_users").once("value", function(snapshot) {
