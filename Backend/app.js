@@ -7,7 +7,6 @@ var queryString = require("querystring");
 var express = require('express');
 var bodyParser = require('body-parser');
 var app = express();
-var difference = require('array-difference');
 
 //Set app to use JSON and URL Encoding
 app.use(bodyParser.json());
