@@ -6,6 +6,7 @@ var url = require("url");
 var queryString = require("querystring");
 var express = require('express');
 var bodyParser = require('body-parser');
+var req = require('request');
 var app = express();
 
 //Set app to use JSON and URL Encoding
@@ -40,6 +41,22 @@ app.post("/auth", function(request, response) {
        return response.send({"status": status,"User":user});
    })
 });
+
+
+//Send push notification
+//Can be updated more but this works
+app.get("/notify", function(request, response) {
+  var url = 'https://fcm.googleapis.com/fcm/send';
+  var headers = { 
+    'Authorization': 'key=AIzaSyAkoDULBxrUmSA6w9gxtR361PMtp0Iqbr4',
+    'Content-Type' : 'application/json' 
+  };
+  var json = { 'to': 'cOYXXFj0o9I:APA91bHyi7K7S6adTEVEzqKcn0-zh17-_9-NB_tkxs7UYa7iPOMirr-U4Z7VHeLq_PImcsq5M_HTe3dtHyPTqq8eAFdWXRTuSrZZ35RjQ0VPuuzVWFgu7W78A1ms5JK0p2qirFSJAEF8', 'priority': 'high', "notification" : {"title" : "Hey!!","body" : "Body!"}};
+  req.post({ url: url, json: json, headers: headers }, function (e, r, body) {
+    return response.send({"status": body});
+  });
+});
+
 
 //Add a user to a gym
 app.post("/addgym", function(request, response) {
@@ -345,6 +362,9 @@ function checkUser(){
   //Stop the listener
   gyms.off("value");
 }
+
+
+
 
 
 /*
